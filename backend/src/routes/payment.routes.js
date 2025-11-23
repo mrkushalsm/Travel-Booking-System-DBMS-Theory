@@ -11,5 +11,6 @@ router.use(auth('Staff', 'Admin'));
 router.get('/', controller.list);
 router.post('/', paymentCreateValidator, validate, controller.create);
 router.put('/:id', paymentUpdateValidator, validate, controller.update);
+router.post('/:id/complete', controller.complete);
 
 module.exports = router;
