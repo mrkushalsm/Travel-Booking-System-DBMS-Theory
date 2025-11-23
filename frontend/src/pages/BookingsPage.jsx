@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { bookingApi } from '../api';
 import LoadingScreen from '../components/LoadingScreen';
@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 const BookingsPage = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
   const prefill = location.state?.prefillBooking;
   const formKey = prefill ? `${prefill.bookingType}-${prefill.serviceId}` : 'booking-form';
@@ -110,6 +111,24 @@ const BookingsPage = () => {
                 Approve
               </button>
             )}
+            {isStaff && (
+              <button
+                type="button"
+                className="btn btn-info btn-xs"
+                onClick={() =>
+                  navigate('/payments', {
+                    state: {
+                      prefillPayment: {
+                        bookingId: row.BookingId,
+                        amount: row.EstimatedAmount,
+                      },
+                    },
+                  })
+                }
+              >
+                Take Payment
+              </button>
+            )}
             <button
               type="button"
               className="btn btn-ghost btn-xs"
@@ -122,7 +141,7 @@ const BookingsPage = () => {
         ),
       },
     ],
-    [approveMutation, cancelMutation, isStaff]
+    [approveMutation, cancelMutation, isStaff, navigate]
   );
 
   return (
