@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { paymentApi } from '../api';
 import LoadingScreen from '../components/LoadingScreen';
@@ -9,14 +10,23 @@ import { useAuth } from '../context/AuthContext';
 const PaymentsPage = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({
-    bookingId: '',
-    amount: '',
+  const location = useLocation();
+  const navigate = useNavigate();
+  const prefill = location.state?.prefillPayment;
+  const [form, setForm] = useState(() => ({
+    bookingId: prefill?.bookingId !== undefined ? String(prefill.bookingId) : '',
+    amount: prefill?.amount !== undefined ? String(prefill.amount) : '',
     paymentDate: new Date().toISOString().slice(0, 10),
     paymentMethod: 'Card',
     status: 'Completed',
-  });
+  }));
   const restricted = !['Staff', 'Admin'].includes(user?.role);
+
+  useEffect(() => {
+    if (!prefill) return;
+    // Clear navigation state so repeat visits do not reuse stale prefill data.
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [prefill, navigate, location.pathname]);
 
   const paymentsQuery = useQuery({
     queryKey: ['payments'],
@@ -30,6 +40,11 @@ const PaymentsPage = () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       setForm((prev) => ({ ...prev, bookingId: '', amount: '' }));
     },
+  });
+
+  const completeMutation = useMutation({
+    mutationFn: (paymentId) => paymentApi.complete(paymentId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['payments'] }),
   });
 
   const handleChange = (event) => {
@@ -52,6 +67,24 @@ const PaymentsPage = () => {
     { key: 'Amount', label: 'Amount' },
     { key: 'PaymentMethod', label: 'Method' },
     { key: 'Status', label: 'Status' },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (_value, row) => (
+        row.Status === 'Pending' ? (
+          <button
+            type="button"
+            className="btn btn-success btn-xs"
+            onClick={() => completeMutation.mutate(row.PaymentId)}
+            disabled={completeMutation.isLoading}
+          >
+            Mark Completed
+          </button>
+        ) : (
+          <span className="text-sm text-base-content/60">—</span>
+        )
+      ),
+    },
   ];
 
   if (restricted) {
