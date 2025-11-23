@@ -1,5 +1,11 @@
 const pool = require('../config/db');
 
+const createNotFoundError = () => {
+  const error = new Error('Payment not found');
+  error.statusCode = 404;
+  return error;
+};
+
 const listPayments = async (filters = {}) => {
   const clauses = [];
   const values = [];
@@ -64,9 +70,22 @@ const updatePayment = async (id, payload) => {
   return getPayment(id);
 };
 
+const completePayment = async (id) => {
+  const [rows] = await pool.execute('SELECT MarkPaymentCompleted(?) AS outcome', [id]);
+  const outcome = rows?.[0]?.outcome ?? rows?.[0]?.MarkPaymentCompleted;
+
+  if (!outcome || outcome === 'NOT_FOUND') {
+    throw createNotFoundError();
+  }
+
+  const payment = await getPayment(id);
+  return { payment, outcome };
+};
+
 module.exports = {
   listPayments,
   getPayment,
   createPayment,
-  updatePayment
+  updatePayment,
+  completePayment
 };
