@@ -10,8 +10,17 @@ export const authApi = {
 
 export const serviceApi = {
   flights: (params) => unwrap(api.get('/flights', { params })).then((data) => data.flights ?? data),
+  createFlight: (payload) => unwrap(api.post('/flights', payload)),
+  updateFlight: (id, payload) => unwrap(api.put(`/flights/${id}`, payload)),
+  deleteFlight: (id) => unwrap(api.delete(`/flights/${id}`)),
   hotels: (params) => unwrap(api.get('/hotels', { params })).then((data) => data.hotels ?? data),
+  createHotel: (payload) => unwrap(api.post('/hotels', payload)),
+  updateHotel: (id, payload) => unwrap(api.put(`/hotels/${id}`, payload)),
+  deleteHotel: (id) => unwrap(api.delete(`/hotels/${id}`)),
   packages: (params) => unwrap(api.get('/packages', { params })).then((data) => data.packages ?? data),
+  createPackage: (payload) => unwrap(api.post('/packages', payload)),
+  updatePackage: (id, payload) => unwrap(api.put(`/packages/${id}`, payload)),
+  deletePackage: (id) => unwrap(api.delete(`/packages/${id}`)),
 };
 
 export const bookingApi = {
@@ -27,6 +36,7 @@ export const paymentApi = {
   list: (params) => unwrap(api.get('/payments', { params })).then((data) => data.payments ?? data),
   create: (payload) => unwrap(api.post('/payments', payload)),
   update: (id, payload) => unwrap(api.put(`/payments/${id}`, payload)),
+  complete: (id) => unwrap(api.post(`/payments/${id}/complete`)),
 };
 
 export const reportApi = {
