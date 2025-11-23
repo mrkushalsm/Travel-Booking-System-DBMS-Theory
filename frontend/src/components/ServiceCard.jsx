@@ -1,4 +1,4 @@
-const ServiceCard = ({ title, subtitle, price, meta = [], actionLabel, onAction }) => {
+const ServiceCard = ({ title, subtitle, price, meta = [], actionLabel, onAction, actions }) => {
   const numericPrice = Number(price);
   const displayPrice = Number.isFinite(numericPrice)
     ? `₹${numericPrice.toLocaleString('en-IN')}`
@@ -18,13 +18,16 @@ const ServiceCard = ({ title, subtitle, price, meta = [], actionLabel, onAction 
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <p className="text-2xl font-semibold text-primary">{displayPrice}</p>
-          {actionLabel && (
-            <button className="btn btn-primary btn-sm" onClick={onAction}>
-              {actionLabel}
-            </button>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {actions}
+            {actionLabel && (
+              <button className="btn btn-primary btn-sm" onClick={onAction}>
+                {actionLabel}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
