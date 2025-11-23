@@ -21,6 +21,7 @@ frontend/.env.*
 
 # Local helper scripts
 auto-commit.bat
+auto-commit-latest.bat
 
 # Logs & runtime artifacts
 npm-debug.log*
