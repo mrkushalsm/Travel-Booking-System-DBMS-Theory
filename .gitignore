@@ -1,0 +1,28 @@
+# Core dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Build outputs
+dist/
+backend/dist/
+frontend/dist/
+
+# Environment & secrets
+.env
+.env.*
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+!*.env.example
+!backend/.env.example
+!frontend/.env.example
+
+# Local helper scripts
+auto-commit.bat
+
+# Logs & runtime artifacts
+npm-debug.log*
+yarn-error.log*
+.DS_Store
