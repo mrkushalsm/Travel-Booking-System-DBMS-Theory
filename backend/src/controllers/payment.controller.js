@@ -28,4 +28,17 @@ const update = async (req, res, next) => {
   }
 };
 
-module.exports = { list, create, update };
+const complete = async (req, res, next) => {
+  try {
+    const { payment, outcome } = await paymentService.completePayment(Number(req.params.id));
+    const messages = {
+      COMPLETED: 'Payment marked as completed',
+      ALREADY_COMPLETED: 'Payment was already completed',
+    };
+    success(res, { payment, outcome }, messages[outcome] || 'Payment status checked');
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { list, create, update, complete };
