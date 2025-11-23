@@ -174,4 +174,110 @@ END;
 
 CALL GetAvailableSeats(1);
 
+-- Performance indexes for frequent filters
+CREATE INDEX idx_flights_route ON Flights (Source, Destination);
+CREATE INDEX idx_hotels_location ON Hotels (Location);
+CREATE INDEX idx_bookings_status ON Bookings (Status);
+CREATE INDEX idx_payments_status ON Payments (Status);
+
+-- Admin maintenance using UPDATE statements
+UPDATE Flights
+SET Price = Price * 1.02
+WHERE Airline = 'Vistara';
+
+UPDATE Hotels
+SET AvailableRooms = TotalRooms
+WHERE AvailableRooms > TotalRooms;
+
+UPDATE TourPackages
+SET Price = Price - 500
+WHERE DurationDays >= 5;
+
+-- Admin cleanup using DELETE statements
+DELETE FROM Payments
+WHERE Status = 'Failed';
+
+DELETE FROM TourPackages
+WHERE Availability = 0;
+
+-- Aggregate & GROUP BY reporting
+SELECT BookingType,
+       COUNT(*) AS TotalBookings,
+       SUM(NumberOfTravellers) AS TravellersCount
+FROM Bookings
+GROUP BY BookingType;
+
+SELECT PaymentMethod,
+       Status,
+       SUM(Amount) AS TotalCollected
+FROM Payments
+GROUP BY PaymentMethod, Status;
+
+-- Join query combining users with their bookings and services
+SELECT b.BookingId,
+       u.Name AS CustomerName,
+       b.BookingType,
+       COALESCE(f.Airline, h.Name, p.Name) AS ServiceName,
+       b.Status
+FROM Bookings b
+JOIN Users u ON b.UserId = u.UserId
+LEFT JOIN Flights f ON b.BookingType = 'Flight' AND b.ServiceId = f.FlightId
+LEFT JOIN Hotels h ON b.BookingType = 'Hotel' AND b.ServiceId = h.HotelId
+LEFT JOIN TourPackages p ON b.BookingType = 'Package' AND b.ServiceId = p.PackageId;
+
+-- Subquery example (flights priced above the average)
+SELECT FlightId, Airline, Price
+FROM Flights
+WHERE Price > (
+    SELECT AVG(Price) FROM Flights
+);
+
+DELIMITER //
+CREATE FUNCTION GetAveragePackagePrice() RETURNS DECIMAL(10,2)
+DETERMINISTIC
+BEGIN
+    DECLARE avgPrice DECIMAL(10,2);
+    SELECT AVG(Price) INTO avgPrice FROM TourPackages;
+    RETURN IFNULL(avgPrice, 0);
+END;
+//
+DELIMITER ;
+
+SELECT GetAveragePackagePrice();
+
+DELIMITER //
+CREATE FUNCTION MarkPaymentCompleted(p_paymentId INT) RETURNS VARCHAR(32)
+DETERMINISTIC
+MODIFIES SQL DATA
+BEGIN
+    DECLARE currentStatus VARCHAR(20);
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET currentStatus = NULL;
+
+    SELECT Status INTO currentStatus
+    FROM Payments
+    WHERE PaymentId = p_paymentId;
+
+    IF currentStatus IS NULL THEN
+        RETURN 'NOT_FOUND';
+    END IF;
+
+    IF currentStatus = 'Completed' THEN
+        RETURN 'ALREADY_COMPLETED';
+    END IF;
+
+    UPDATE Payments
+    SET Status = 'Completed'
+    WHERE PaymentId = p_paymentId;
+
+    RETURN 'COMPLETED';
+END;
+//
+DELIMITER ;
+
+-- Example usage: SELECT MarkPaymentCompleted(1);
+
+-- Backup & restore guidance
+-- mysqldump -u root -p TravelAgencyDB > TravelAgencyDB_backup.sql
+-- mysql -u root -p TravelAgencyDB < TravelAgencyDB_backup.sql
+
 commit;
