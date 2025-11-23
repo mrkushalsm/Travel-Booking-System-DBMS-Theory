@@ -3,23 +3,39 @@ import { authApi } from '../api';
 
 const AuthContext = createContext(null);
 
+const getStoredToken = () => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('ta_token');
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [bootstrapToken] = useState(() => getStoredToken());
+  const [loading, setLoading] = useState(() => Boolean(bootstrapToken));
 
   useEffect(() => {
-    const token = localStorage.getItem('ta_token');
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    if (!bootstrapToken) return;
+    let active = true;
 
-    authApi
-      .me()
-      .then((res) => setUser(res.data.data?.user))
-      .catch(() => localStorage.removeItem('ta_token'))
-      .finally(() => setLoading(false));
-  }, []);
+    const fetchProfile = async () => {
+      try {
+        const res = await authApi.me();
+        if (!active) return;
+        setUser(res.data.data?.user);
+      } catch {
+        localStorage.removeItem('ta_token');
+        if (active) setUser(null);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+
+    fetchProfile();
+
+    return () => {
+      active = false;
+    };
+  }, [bootstrapToken]);
 
   const handleAuth = (payload, handler) =>
     handler(payload).then((res) => {
@@ -44,4 +60,7 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+// eslint-disable-next-line react-refresh/only-export-components
+export function useAuth() {
+  return useContext(AuthContext);
+}
